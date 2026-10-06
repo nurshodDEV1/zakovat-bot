@@ -17,7 +17,8 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import BOT_TOKEN
 import database
-from handlers import start_router, game_router, admin_router
+from handlers import start_router, game_router, admin_router, group_router
+from services import run_group_auto_quiz
 
 # Loggingni sozlash
 logging.basicConfig(
@@ -54,7 +55,8 @@ async def main():
     dp = Dispatcher(storage=MemoryStorage())
 
     # 4. Routerlarni ulash
-    # Tartib muhim: start -> game -> admin
+    # Tartib muhim: group -> start -> admin -> game
+    dp.include_router(group_router)
     dp.include_router(start_router)
     dp.include_router(admin_router)
     dp.include_router(game_router)
@@ -75,13 +77,16 @@ async def main():
     await site.start()
     logger.info(f"🌐 Web server {port}-portda ishga tushdi (Render Free Tier uchun)")
 
-    # 6. Botni ishga tushirish
+    # 6. Guruhlar uchun avtomatik savol beruvchi fon xizmatini ishga tushirish
+    auto_quiz_task = asyncio.create_task(run_group_auto_quiz(bot))
+
+    # 7. Botni ishga tushirish
     try:
         bot_info = await bot.get_me()
         logger.info(f"🤖 Bot muvaffaqiyatli ishga tushdi: @{bot_info.username}")
         print("\n" + "=" * 50)
         print(f"🚀 Zakovat Bot ishga tushdi: @{bot_info.username}")
-        print("Bot xabarlarni qabul qilishga tayyor...")
+        print("Bot guruhlar va shaxsiy chatlarda xabarlarni qabul qilishga tayyor...")
         print("=" * 50 + "\n")
         
         # Eski o'qilmagan xabarlarni tashlab yuborish
@@ -90,6 +95,7 @@ async def main():
     except Exception as e:
         logger.error(f"Botni ishga tushirishda xatolik yuz berdi: {e}")
     finally:
+        auto_quiz_task.cancel()
         await runner.cleanup()
         await bot.session.close()
 

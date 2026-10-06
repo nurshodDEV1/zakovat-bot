@@ -18,12 +18,22 @@ Ushbu bot Telegram orqali Zakovat intellektual o'yinini o'tkazish uchun mo'ljall
      - **90% dan kam** bo'lsa: **FALSE ❌ (Noto'g'ri)** deb belgilanadi va to'g'ri javob ko'rsatiladi.
    - Harflardagi mayda xatolar, o'zbekcha tutuq belgilari (`'`, `` ` ``, `ʻ`, `‘`), katta-kichik harflar va tinish belgilari avtomatik to'g'irlanadi.
 
-3. **Admin Boshqaruv Paneli (`/admin`):**
-   - ➕ **Yangi savol qo'shish:** Savol matni, to'g'ri javob va ixtiyoriy izoh kiritish.
-   - 📋 **Savollar ro'yxati:** Bazadagi savollarni ko'rish va inline tugma orqali o'chirish.
-   - 📊 **Umumiy statistika:** Jami foydalanuvchilar, savollar va berilgan javoblar soni.
+3. **Guruhlarda Avto-Savol O'yini (Guruh Zakovat):**
+   - Botni istalgan Telegram guruhiga qo'shish mumkin.
+   - Guruh admini `/start_quiz` buyrug'i orqali avtomatik Zakovat o'yinini yoqadi.
+   - Bot har bir belgilangan vaqtda (standart 3 daqiqa) yangi savol (matnli yoki rasmli) yuboradi.
+   - Guruh a'zolariga javob berish uchun 90 soniya beriladi.
+   - Birinchi bo'lib to'g'ri javob yozgan bilimdon g'olib deb e'lon qilinadi va guruhdagi reytingiga +1 ball qo'shiladi.
+   - Agar hech kim topa olmasa, vaqt tugagach to'g'ri javob e'lon qilinadi va oraliq vaqtdan keyin yangi savol keladi.
+   - Buyruqlar: `/start_quiz`, `/stop_quiz`, `/interval <daqiqa>`, `/savol`, `/reyting`.
 
-4. **Reyting va Profil:**
+4. **Admin Boshqaruv Paneli (`/admin`):**
+   - ➕ **Yangi savol qo'shish:** Matnli yoki rasmli savol, to'g'ri javob va ixtiyoriy izoh kiritish.
+   - 📋 **Savollar ro'yxati:** Bazadagi savollarni rasmi bilan ko'rish va inline tugma orqali o'chirish.
+   - 🗑 **Barcha savollarni tozalash:** Bazani bitta tugma bilan tozalash.
+   - 📊 **Umumiy statistika:** Jami foydalanuvchilar, guruhlar, savollar va berilgan javoblar soni.
+
+5. **Reyting va Profil:**
    - **📊 Mening profilim:** Shaxsiy ball, jami urinishlar va samaradorlik foizi.
    - **🏆 Reyting:** Eng ko'p ball to'plagan Top 10 bilimdonlar ro'yxati.
 
