@@ -35,9 +35,16 @@ def init_db():
                 question TEXT NOT NULL,
                 answer TEXT NOT NULL,
                 explanation TEXT DEFAULT '',
+                image_id TEXT DEFAULT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
+        
+        # Agar jadval avval yaratilgan bo'lsa, image_id ustunini tekshirish va qo'shish
+        cursor.execute("PRAGMA table_info(questions)")
+        columns = [col["name"] for col in cursor.fetchall()]
+        if "image_id" not in columns:
+            cursor.execute("ALTER TABLE questions ADD COLUMN image_id TEXT DEFAULT NULL")
         
         # Javoblar tarixi jadvali
         cursor.execute("""
@@ -125,12 +132,12 @@ def get_question_by_id(question_id: int) -> Optional[sqlite3.Row]:
         return cursor.fetchone()
 
 
-def add_question(question: str, answer: str, explanation: str = "") -> int:
+def add_question(question: str, answer: str, explanation: str = "", image_id: Optional[str] = None) -> int:
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute(
-            "INSERT INTO questions (question, answer, explanation) VALUES (?, ?, ?)",
-            (question.strip(), answer.strip(), explanation.strip())
+            "INSERT INTO questions (question, answer, explanation, image_id) VALUES (?, ?, ?, ?)",
+            (question.strip(), answer.strip(), explanation.strip(), image_id)
         )
         conn.commit()
         return cursor.lastrowid

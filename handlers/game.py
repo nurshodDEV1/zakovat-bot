@@ -57,7 +57,16 @@ async def send_question(message: Message, state: FSMContext):
         f"<i>✍️ Javobingizni quyida yozib yuboring:</i>"
     )
 
-    await message.answer(q_text, reply_markup=in_game_keyboard(), parse_mode="HTML")
+    image_id = question["image_id"] if "image_id" in question.keys() else None
+    if image_id:
+        await message.answer_photo(
+            photo=image_id,
+            caption=q_text,
+            reply_markup=in_game_keyboard(),
+            parse_mode="HTML"
+        )
+    else:
+        await message.answer(q_text, reply_markup=in_game_keyboard(), parse_mode="HTML")
 
 
 @router.message(GameState.waiting_for_answer, F.text == "⏭ O'tkazib yuborish")

@@ -89,24 +89,102 @@ async def start_add_question(message: Message, state: FSMContext):
     if not is_admin(message.from_user.id):
         return
         
-    await state.set_state(AdminState.waiting_for_question_text)
+    await state.set_state(AdminState.waiting_for_question_content)
     await message.answer(
-        "📝 <b>Yangi savol matnini kiriting:</b>\n\n"
+        "📝 <b>Yangi savol matnini kiriting yoki rasm yuboring:</b>\n\n"
+        "💡 <i>Imkoniyatlar:</i>\n"
+        "• <b>Matnli savol:</b> Savol matnini yozib yuboring\n"
+        "• <b>Rasmli savol:</b> Rasmni yuboring (tagiga savol matnini ham yozishingiz mumkin)\n\n"
         "<i>Bekor qilish uchun pastdagi tugmani bosing.</i>",
         reply_markup=cancel_keyboard(),
         parse_mode="HTML"
     )
 
 
-@router.message(AdminState.waiting_for_question_text, F.text)
+# 1-holat: Rasmli savol to'g'ridan-to'g'ri yuborilganda
+@router.message(AdminState.waiting_for_question_content, F.photo)
+async def process_question_photo(message: Message, state: FSMContext):
+    photo_id = message.photo[-1].file_id
+    caption = (message.caption or "").strip()
+    
+    await state.update_data(image_id=photo_id)
+    
+    if caption:
+        await state.update_data(question_text=caption)
+        await state.set_state(AdminState.waiting_for_answer_text)
+        await message.answer(
+            "💡 <b>Endi ushbu savolning to'g'ri javobini kiriting:</b>\n\n"
+            "<i>Eslatma: Bir nechta variant bo'lsa: <code>Amir Temur | Temurbek</code></i>",
+            reply_markup=cancel_keyboard(),
+            parse_mode="HTML"
+        )
+    else:
+        # Rasm yuborildi, lekin matni yo'q
+        await message.answer(
+            "🖼 Rasm qabul qilindi!\nEndi ushbu rasmga tegishli <b>savol matnini</b> yozib yuboring:",
+            reply_markup=cancel_keyboard(),
+            parse_mode="HTML"
+        )
+
+
+# 2-holat: Matn yuborilganda
+@router.message(AdminState.waiting_for_question_content, F.text)
 async def process_question_text(message: Message, state: FSMContext):
+    data = await state.get_data()
+    # Agar rasm avval yuborilgan bo'lsa, bu uning matni
+    if data.get("image_id"):
+        await state.update_data(question_text=message.text.strip())
+        await state.set_state(AdminState.waiting_for_answer_text)
+        await message.answer(
+            "💡 <b>Endi ushbu savolning to'g'ri javobini kiriting:</b>\n\n"
+            "<i>Eslatma: Bir nechta variant bo'lsa: <code>Amir Temur | Temurbek</code></i>",
+            reply_markup=cancel_keyboard(),
+            parse_mode="HTML"
+        )
+        return
+
+    # Faqat matn yuborildi, rasm qo'shishni taklif qilish
     await state.update_data(question_text=message.text.strip())
+    await state.set_state(AdminState.waiting_for_image)
+    
+    skip_img_kb = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="⏩ Rasmsiz davom etish")],
+            [KeyboardButton(text="❌ Bekor qilish")]
+        ],
+        resize_keyboard=True
+    )
+    await message.answer(
+        "🖼 <b>Ushbu savolga rasm biriktirasizmi?</b>\n\n"
+        "Agar rasm bo'lsa, rasmni yuboring. Rasmsiz davom etish uchun '⏩ Rasmsiz davom etish' tugmasini bosing:",
+        reply_markup=skip_img_kb,
+        parse_mode="HTML"
+    )
+
+
+# Rasm bosqichi: Rasm yuborilsa
+@router.message(AdminState.waiting_for_image, F.photo)
+async def process_image_attachment(message: Message, state: FSMContext):
+    photo_id = message.photo[-1].file_id
+    await state.update_data(image_id=photo_id)
+    await state.set_state(AdminState.waiting_for_answer_text)
+    
+    await message.answer(
+        "🖼 Rasm biriktirildi!\n\n💡 <b>Endi savolning to'g'ri javobini kiriting:</b>",
+        reply_markup=cancel_keyboard(),
+        parse_mode="HTML"
+    )
+
+
+# Rasm bosqichi: Rasmsiz davom etish tanlansa
+@router.message(AdminState.waiting_for_image, F.text == "⏩ Rasmsiz davom etish")
+async def process_skip_image(message: Message, state: FSMContext):
+    await state.update_data(image_id=None)
     await state.set_state(AdminState.waiting_for_answer_text)
     
     await message.answer(
         "💡 <b>Endi ushbu savolning to'g'ri javobini kiriting:</b>\n\n"
-        "<i>Eslatma: Agar bir nechta to'g'ri variant bo'lsa, ularni <b>|</b> belgisi bilan ajratishingiz mumkin.\n"
-        "Masalan: <code>Amir Temur | Temurbek | Sohibqiron</code></i>",
+        "<i>Eslatma: Bir nechta variant bo'lsa: <code>Amir Temur | Temurbek</code></i>",
         reply_markup=cancel_keyboard(),
         parse_mode="HTML"
     )
@@ -135,7 +213,6 @@ async def process_answer_text(message: Message, state: FSMContext):
 
 @router.message(AdminState.waiting_for_explanation, F.text)
 async def process_explanation(message: Message, state: FSMContext):
-    user_id = message.from_user.id
     explanation = ""
     if message.text != "⏩ Izohni o'tkazib yuborish":
         explanation = message.text.strip()
@@ -143,21 +220,29 @@ async def process_explanation(message: Message, state: FSMContext):
     data = await state.get_data()
     q_text = data.get("question_text")
     a_text = data.get("answer_text")
+    img_id = data.get("image_id")
     
     new_id = database.add_question(
         question=q_text,
         answer=a_text,
-        explanation=explanation
+        explanation=explanation,
+        image_id=img_id
     )
     
     await state.clear()
     
-    await message.answer(
+    resp_text = (
         f"✅ <b>Savol muvaffaqiyatli saqlandi!</b>\n\n"
         f"🆔 ID: #{new_id}\n"
         f"❓ Savol: {q_text}\n"
         f"💡 Javob: {a_text}\n"
-        f"ℹ️ Izoh: {explanation or 'Mavjud emas'}",
+        f"ℹ️ Izoh: {explanation or 'Mavjud emas'}"
+    )
+    if img_id:
+        resp_text += "\n🖼 <i>Rasm biriktirilgan</i>"
+    
+    await message.answer(
+        resp_text,
         reply_markup=admin_menu_keyboard(),
         parse_mode="HTML"
     )
@@ -188,11 +273,20 @@ async def list_questions(message: Message):
         if q['explanation']:
             q_info += f"ℹ️ Izoh: <i>{q['explanation']}</i>\n"
             
-        await message.answer(
-            q_info,
-            reply_markup=question_delete_inline(q['id']),
-            parse_mode="HTML"
-        )
+        img_id = q["image_id"] if "image_id" in q.keys() else None
+        if img_id:
+            await message.answer_photo(
+                photo=img_id,
+                caption=q_info,
+                reply_markup=question_delete_inline(q['id']),
+                parse_mode="HTML"
+            )
+        else:
+            await message.answer(
+                q_info,
+                reply_markup=question_delete_inline(q['id']),
+                parse_mode="HTML"
+            )
 
 
 @router.callback_query(F.data.startswith("del_q:"))

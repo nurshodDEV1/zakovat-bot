@@ -7,6 +7,7 @@ class GameState(StatesGroup):
     waiting_for_answer = State()
 
 class AdminState(StatesGroup):
-    waiting_for_question_text = State()
+    waiting_for_question_content = State()
+    waiting_for_image = State()
     waiting_for_answer_text = State()
     waiting_for_explanation = State()
