@@ -53,8 +53,7 @@ async def send_question(message: Message, state: FSMContext):
 
     q_text = (
         f"🧠 <b>Zakovat savoli #{question['id']}</b>\n\n"
-        f"❓ {question['question']}\n\n"
-        f"<i>✍️ Javobingizni quyida yozib yuboring:</i>"
+        f"❓ {question['question']}"
     )
 
     image_id = question["image_id"] if "image_id" in question.keys() else None
