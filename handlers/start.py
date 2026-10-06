@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 import database
 from config import ADMIN_IDS
 from states import RegistrationState
-from keyboards import contact_keyboard, main_menu_keyboard
+from keyboards import contact_keyboard, main_menu_keyboard, add_to_group_inline
 
 router = Router()
 
@@ -24,9 +24,16 @@ async def cmd_start(message: Message, state: FSMContext):
 
     # Foydalanuvchi bazada telefon raqami bilan bormi?
     if database.is_user_registered(user_id):
+        bot_info = await message.bot.get_me()
+        bot_username = bot_info.username or "zakovatgazganbot"
         await message.answer(
             "🏠 <b>Asosiy menyu:</b>",
             reply_markup=main_menu_keyboard(is_admin=is_admin),
+            parse_mode="HTML"
+        )
+        await message.answer(
+            "👥 <i>Botni guruhingizga qo'shib, do'stlaringiz bilan bellashing:</i>",
+            reply_markup=add_to_group_inline(bot_username),
             parse_mode="HTML"
         )
         return
@@ -78,9 +85,17 @@ async def process_contact(message: Message, state: FSMContext):
         f"Tayyor bo'lsangiz, boshlaymizmi?"
     )
     
+    bot_info = await message.bot.get_me()
+    bot_username = bot_info.username or "zakovatgazganbot"
+
     await message.answer(
         welcome_text,
         reply_markup=main_menu_keyboard(is_admin=is_admin),
+        parse_mode="HTML"
+    )
+    await message.answer(
+        "👥 <i>Botni guruhingizga qo'shib, do'stlaringiz bilan birga o'ynash uchun pastdagi tugmani bosing:</i>",
+        reply_markup=add_to_group_inline(bot_username),
         parse_mode="HTML"
     )
 

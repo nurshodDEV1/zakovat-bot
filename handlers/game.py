@@ -10,7 +10,8 @@ from keyboards import (
     main_menu_keyboard,
     in_game_keyboard,
     after_answer_keyboard,
-    contact_keyboard
+    contact_keyboard,
+    add_to_group_inline
 )
 
 router = Router()
@@ -219,3 +220,25 @@ async def show_leaderboard(message: Message):
         text += f"{icon} <b>{leader_name}</b> — <b>{score} ball</b> ({total} ta urinish)\n"
 
     await message.answer(text, parse_mode="HTML")
+
+
+@router.message(F.text == "👥 Guruhga qo'shish")
+async def show_add_to_group(message: Message):
+    bot_info = await message.bot.get_me()
+    bot_username = bot_info.username or "zakovatgazganbot"
+    
+    text = (
+        "👥 <b>Zakovat botini Telegram guruhingizga qo'shing!</b>\n\n"
+        "Guruhda do'stlaringiz va bilimdonlar bilan bellashing.\n\n"
+        "✨ <b>Guruhdagi imkoniyatlar:</b>\n"
+        "• Har 3 daqiqada avtomatik yangi savollar (matnli va rasmli)\n"
+        "• Savolga birinchi to'g'ri javob bergan bilimdonga ball\n"
+        "• Guruh bo'yicha maxsus reyting jadvali (<code>/reyting</code>)\n\n"
+        "👇 <b>Botni guruhga qo'shish uchun pastdagi tugmani bosing:</b>"
+    )
+    
+    await message.answer(
+        text,
+        reply_markup=add_to_group_inline(bot_username),
+        parse_mode="HTML"
+    )

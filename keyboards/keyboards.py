@@ -20,7 +20,8 @@ def main_menu_keyboard(is_admin: bool = False) -> ReplyKeyboardMarkup:
     """Asosiy menyu tugmalari"""
     keyboard = [
         [KeyboardButton(text="❓ Savol olish")],
-        [KeyboardButton(text="📊 Mening profilim"), KeyboardButton(text="🏆 Reyting")]
+        [KeyboardButton(text="📊 Mening profilim"), KeyboardButton(text="🏆 Reyting")],
+        [KeyboardButton(text="👥 Guruhga qo'shish")]
     ]
     if is_admin:
         keyboard.append([KeyboardButton(text="⚙️ Admin panel")])
@@ -28,6 +29,19 @@ def main_menu_keyboard(is_admin: bool = False) -> ReplyKeyboardMarkup:
     return ReplyKeyboardMarkup(
         keyboard=keyboard,
         resize_keyboard=True
+    )
+
+def add_to_group_inline(bot_username: str = "zakovatgazganbot") -> InlineKeyboardMarkup:
+    """Botni guruhga qo'shish uchun inline tugma"""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="➕ Botni guruhga qo'shish",
+                    url=f"https://t.me/{bot_username}?startgroup=true"
+                )
+            ]
+        ]
     )
 
 def in_game_keyboard() -> ReplyKeyboardMarkup:
