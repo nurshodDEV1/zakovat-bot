@@ -18,26 +18,29 @@ async def cmd_start(message: Message, state: FSMContext):
     name = user.first_name or "Foydalanuvchi"
     is_admin = user_id in ADMIN_IDS
 
+    # Agar admin bo'lsa va hali bazada bo'lmasa, uni avtomatik ro'yxatdan o'tkazamiz
+    if is_admin and not database.is_user_registered(user_id):
+        database.save_user(user_id=user_id, first_name=name, username=user.username, phone_number="Admin")
+
     # Foydalanuvchi bazada telefon raqami bilan bormi?
     if database.is_user_registered(user_id):
-        nickname = f"@{user.username}" if user.username else name
         await message.answer(
-            f"Assalomu alaykum, <b>{nickname}</b>! 🧠\n\n"
-            f"<b>Zakovat intellektual o'yini</b> botiga xush kelibsiz!\n"
-            f"O'z bilimingizni sinab ko'rish uchun pastdagi <b>'❓ Savol olish'</b> tugmasini bosing.",
+            "🏠 <b>Asosiy menyu:</b>",
             reply_markup=main_menu_keyboard(is_admin=is_admin),
             parse_mode="HTML"
         )
-    else:
-        await state.set_state(RegistrationState.waiting_for_contact)
-        await message.answer(
-            f"Assalomu alaykum, <b>{name}</b>! 👋\n\n"
-            f"🧠 <b>Zakovat intellektual o'yini</b> botiga xush kelibsiz!\n\n"
-            f"O'yinni boshlash va o'z bilimingizni sinab ko'rish uchun "
-            f"iltimos, pastdagi tugma orqali telefon raqamingizni yuboring:",
-            reply_markup=contact_keyboard(),
-            parse_mode="HTML"
-        )
+        return
+
+    # Yangi foydalanuvchi bo'lsa, telefon raqam so'raymiz
+    await state.set_state(RegistrationState.waiting_for_contact)
+    await message.answer(
+        f"Assalomu alaykum, <b>{name}</b>! 👋\n\n"
+        f"🧠 <b>Zakovat intellektual o'yini</b> botiga xush kelibsiz!\n\n"
+        f"O'yinni boshlash va o'z bilimingizni sinab ko'rish uchun "
+        f"iltimos, pastdagi tugma orqali telefon raqamingizni yuboring:",
+        reply_markup=contact_keyboard(),
+        parse_mode="HTML"
+    )
 
 
 @router.message(RegistrationState.waiting_for_contact, F.contact)
