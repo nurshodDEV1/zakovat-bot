@@ -58,7 +58,23 @@ async def main():
     dp.include_router(admin_router)
     dp.include_router(game_router)
 
-    # 5. Botni ishga tushirish
+    # 5. Render bepul tarif (Web Service) uchun kichik HTTP server
+    port = int(os.getenv("PORT", "8080"))
+    from aiohttp import web
+    
+    async def handle_ping(request):
+        return web.Response(text="Zakovat Bot is running!")
+
+    app = web.Application()
+    app.router.add_get("/", handle_ping)
+    app.router.add_get("/health", handle_ping)
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    logger.info(f"🌐 Web server {port}-portda ishga tushdi (Render Free Tier uchun)")
+
+    # 6. Botni ishga tushirish
     try:
         bot_info = await bot.get_me()
         logger.info(f"🤖 Bot muvaffaqiyatli ishga tushdi: @{bot_info.username}")
@@ -73,6 +89,7 @@ async def main():
     except Exception as e:
         logger.error(f"Botni ishga tushirishda xatolik yuz berdi: {e}")
     finally:
+        await runner.cleanup()
         await bot.session.close()
 
 
@@ -81,3 +98,4 @@ if __name__ == "__main__":
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
         logger.info("Bot to'xtatildi!")
+
