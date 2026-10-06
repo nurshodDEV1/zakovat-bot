@@ -4,71 +4,6 @@ from typing import Optional, List, Dict, Any
 
 DB_NAME = "zakovat.db"
 
-# Dastlabki qiziqarli Zakovat savollari to'plami
-DEFAULT_QUESTIONS = [
-    {
-        "question": "Rivoyatlarga ko'ra, mashhur faylasuf Diogen kunduzi qo'lida chiroq (fonus) yoqib shahar bo'ylab aylanib yurar ekan. Undan 'Nima qilyapsan?' deb so'raganlarida, u nima deb javob bergan?",
-        "answer": "Odam qidiryapman / Haqiqiy odamni qidiryapman / Odam izlayapman",
-        "explanation": "Diogen 'Men odam qidiryapman' deb javob bergan va jamiyatdagi insoniy fazilatlarning yo'qolib borayotganiga ishora qilgan."
-    },
-    {
-        "question": "Napoleon Bonapart qaysi orolda tug'ilgan?",
-        "answer": "Korsika / Korsika oroli",
-        "explanation": "Napoleon 1769-yilda O'rta dengizdagi Korsika orolining Ayachcho shahrida tug'ilgan."
-    },
-    {
-        "question": "Yer yuzidagi eng chuqur ko'l qaysi?",
-        "answer": "Baykal / Baykal koli",
-        "explanation": "Baykal ko'li Rossiyada joylashgan bo'lib, uning eng chuqur nuqtasi 1642 metrni tashkil etadi."
-    },
-    {
-        "question": "Ushbu buyum qadimgi Misrda paydo bo'lgan. Qizig'i shundaki, dastlab undan faqat erkaklar va aslzodalar baland ko'rinish hamda otda yurishda uzangiga yaxshi o'rnashish uchun foydalanishgan. Hozirda esa bu buyum asosan ayollar garderobida uchraydi. Gap nima haqida ketmoqda?",
-        "answer": "Poshna / Baland poshnali poyabzal / Baland poshna",
-        "explanation": "Baland poshnalar dastlab otliq askarlar uchun uzangini mahkam ushlash maqsadida kashf etilgan."
-    },
-    {
-        "question": "Alisher Navoiy o'zining turkiy tilda yozgan she'rlarida qaysi taxallusni ishlatgan?",
-        "answer": "Navoiy",
-        "explanation": "Alisher Navoiy turkiy tildagi asarlarida 'Navoiy', forsiy tildagi asarlarida esa 'Foniy' taxalluslaridan foydalangan."
-    },
-    {
-        "question": "Qaysi mashhur olimning boshiga olma tushganidan so'ng butun olam tortishish qonunini kashf qilgan degan afsona bor?",
-        "answer": "Isaak Nyuton / Nyuton",
-        "explanation": "Ser Isaak Nyuton olma daraxti tagida o'tirganda tortishish kuchi haqida o'ylay boshlagan."
-    },
-    {
-        "question": "Dunyodagi eng katta okean qaysi?",
-        "answer": "Tinch okeani",
-        "explanation": "Tinch okeani maydoni bo'yicha dunyodagi eng katta va eng chuqur okean hisoblanadi."
-    },
-    {
-        "question": "Shaxmat taxtasida jami nechta oq va qora katak bor?",
-        "answer": "64 / 64 ta",
-        "explanation": "Shaxmat taxtasi 8x8 o'lchamda bo'lib, jami 64 ta katakdan iborat (32 oq, 32 qora)."
-    },
-    {
-        "question": "Sohibqiron Amir Temurning davlat shiori qanday bo'lgan?",
-        "answer": "Kuch adolatdadir / Rostlik najotdir",
-        "explanation": "Amir Temur davlat muhri va tangalarida 'Rosti-rusti' (Kuch adolatdadir) shiorini yozdirgan."
-    },
-    {
-        "question": "Quyosh sistemasidagi eng katta sayyora qaysi?",
-        "answer": "Yupiter",
-        "explanation": "Yupiter Quyosh tizimidagi eng ulkan gigant gaz sayyorasidir."
-    },
-    {
-        "question": "Mashhur 'Mona Liza' (Jokonda) asarining muallifi kim?",
-        "answer": "Leonardo da Vinchi / Da Vinchi",
-        "explanation": "Asar italiyalik buyuk rassom Leonardo da Vinchi tomonidan chizilgan."
-    },
-    {
-        "question": "Qaysi hayvon suv ichmaydi va butun umri davomida chanqog'ini faqat iste'mol qilgan urug'lari hisobiga qondiradi?",
-        "answer": "Kenguru kalamushi / Kenguru kalamush",
-        "explanation": "Cho'lda yashovchi kenguru kalamushlari deyarli suv ichmaydi, organizmidagi suvni oziq-ovqatdan oladi."
-    }
-]
-
-
 def get_db():
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row
@@ -76,7 +11,7 @@ def get_db():
 
 
 def init_db():
-    """Ma'lumotlar bazasi va jadvallarni yaratish hamda boshlang'ich savollarni kiritish"""
+    """Ma'lumotlar bazasi va jadvallarni yaratish"""
     with get_db() as conn:
         cursor = conn.cursor()
         
@@ -116,16 +51,16 @@ def init_db():
                 answered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
-        
-        # Agar savollar bo'lmasa, boshlang'ich savollarni qo'shish
-        cursor.execute("SELECT COUNT(*) as count FROM questions")
-        count = cursor.fetchone()["count"]
-        if count == 0:
-            for q in DEFAULT_QUESTIONS:
-                cursor.execute(
-                    "INSERT INTO questions (question, answer, explanation) VALUES (?, ?, ?)",
-                    (q["question"], q["answer"], q["explanation"])
-                )
+        conn.commit()
+
+
+def clear_all_questions():
+    """Bazadagi barcha savollar va javoblar tarixini butunlay o'chirib tashlaydi"""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM questions")
+        cursor.execute("DELETE FROM user_answers")
+        cursor.execute("DELETE FROM sqlite_sequence WHERE name IN ('questions', 'user_answers')")
         conn.commit()
 
 

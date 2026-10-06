@@ -54,6 +54,7 @@ def admin_menu_keyboard() -> ReplyKeyboardMarkup:
         keyboard=[
             [KeyboardButton(text="➕ Yangi savol qo'shish")],
             [KeyboardButton(text="📋 Savollar ro'yxati"), KeyboardButton(text="📊 Statistika")],
+            [KeyboardButton(text="🗑 Barcha savollarni tozalash")],
             [KeyboardButton(text="🏠 Bosh menyu")]
         ],
         resize_keyboard=True

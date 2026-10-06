@@ -70,6 +70,20 @@ async def admin_statistics(message: Message):
     await message.answer(text, parse_mode="HTML")
 
 
+@router.message(F.text == "🗑 Barcha savollarni tozalash")
+async def handle_clear_all_questions(message: Message):
+    if not is_admin(message.from_user.id):
+        return
+        
+    database.clear_all_questions()
+    await message.answer(
+        "🗑 <b>Barcha savollar va javoblar tarixi muvaffaqiyatli o'chirildi!</b>\n"
+        "Hozirda bazada 0 ta savol mavjud. Yangi savollarni '➕ Yangi savol qo'shish' tugmasi orqali kiritishingiz mumkin.",
+        reply_markup=admin_menu_keyboard(),
+        parse_mode="HTML"
+    )
+
+
 @router.message(F.text == "➕ Yangi savol qo'shish")
 async def start_add_question(message: Message, state: FSMContext):
     if not is_admin(message.from_user.id):
