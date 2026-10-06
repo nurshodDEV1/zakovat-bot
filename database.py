@@ -123,8 +123,9 @@ def get_user(user_id: int) -> Optional[sqlite3.Row]:
 
 
 def is_user_registered(user_id: int) -> bool:
+    """Foydalanuvchi bazada mavjud bo'lsa True qaytaradi"""
     user = get_user(user_id)
-    return user is not None and bool(user["phone_number"])
+    return user is not None
 
 
 def get_random_question(user_id: Optional[int] = None) -> Optional[sqlite3.Row]:

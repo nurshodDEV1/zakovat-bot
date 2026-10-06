@@ -24,14 +24,16 @@ def check_registered(user_id: int) -> bool:
 @router.message(F.text.in_(["❓ Savol olish", "❓ Keyingi savol"]))
 async def send_question(message: Message, state: FSMContext):
     user_id = message.from_user.id
+    user = message.from_user
     
-    if not check_registered(user_id):
-        await state.set_state(RegistrationState.waiting_for_contact)
-        await message.answer(
-            "⚠️ O'yinni o'ynash uchun avval telefon raqamingizni yuboring:",
-            reply_markup=contact_keyboard()
+    # Agar foydalanuvchi bazada bo'lmasa, uni darhol ro'yxatga olamiz
+    if not database.is_user_registered(user_id):
+        database.save_user(
+            user_id=user_id,
+            first_name=user.first_name or "Foydalanuvchi",
+            username=user.username,
+            phone_number=""
         )
-        return
 
     # Tasodifiy savolni olish
     question = database.get_random_question(user_id)

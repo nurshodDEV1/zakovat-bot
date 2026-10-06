@@ -38,7 +38,14 @@ async def cmd_start(message: Message, state: FSMContext):
         )
         return
 
-    # Yangi foydalanuvchi bo'lsa, telefon raqam so'raymiz
+    # Yangi foydalanuvchini bazaga saqlaymiz (keyingi safar qayta so'ralmasligi uchun)
+    database.save_user(
+        user_id=user_id,
+        first_name=name,
+        username=user.username,
+        phone_number=""
+    )
+    
     await state.set_state(RegistrationState.waiting_for_contact)
     await message.answer(
         f"Assalomu alaykum, <b>{name}</b>! 👋\n\n"
