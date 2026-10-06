@@ -44,6 +44,19 @@ def add_to_group_inline(bot_username: str = "zakovatgazganbot") -> InlineKeyboar
         ]
     )
 
+def next_question_inline() -> InlineKeyboardMarkup:
+    """Guruhda keyingi savolni chaqirish uchun inline tugma"""
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="❓ Keyingi savol",
+                    callback_data="group_next_q"
+                )
+            ]
+        ]
+    )
+
 def in_game_keyboard() -> ReplyKeyboardMarkup:
     """Savolga javob berish jarayonidagi tugmalar"""
     return ReplyKeyboardMarkup(

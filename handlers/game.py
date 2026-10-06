@@ -154,7 +154,7 @@ async def process_user_answer(message: Message, state: FSMContext):
         )
         if explanation:
             response_text += f"ℹ️ <i>Izoh: {explanation}</i>\n"
-        response_text += "\n👏 Sizga <b>+1 ball</b> berildi!"
+        response_text += "\n👏 Sizga <b>+10 ball</b> berildi!"
     else:
         response_text = (
             f"❌ <b>Afsuski, noto'g'ri javob!</b>\n\n"

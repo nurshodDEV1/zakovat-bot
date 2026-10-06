@@ -197,7 +197,7 @@ def record_answer(user_id: int, question_id: int, user_answer: str, similarity: 
         """, (user_id, question_id, user_answer, similarity, 1 if is_correct else 0))
         
         # Foydalanuvchi statistikasini yangilash
-        score_increment = 1 if is_correct else 0
+        score_increment = 10 if is_correct else 0
         cursor.execute("""
             UPDATE users 
             SET score = score + ?,
@@ -341,14 +341,14 @@ def clear_group_current_question(chat_id: int):
 
 
 def add_group_user_score(chat_id: int, user_id: int, first_name: str, username: Optional[str]) -> int:
-    """Guruhdagi foydalanuvchiga +1 ball qo'shish va yangi ballini qaytarish"""
+    """Guruhdagi foydalanuvchiga +10 ball qo'shish va yangi ballini qaytarish"""
     with get_db() as conn:
         cursor = conn.cursor()
         cursor.execute("""
             INSERT INTO group_scores (chat_id, user_id, first_name, username, score)
-            VALUES (?, ?, ?, ?, 1)
+            VALUES (?, ?, ?, ?, 10)
             ON CONFLICT(chat_id, user_id) DO UPDATE SET
-                score = score + 1,
+                score = score + 10,
                 first_name = excluded.first_name,
                 username = excluded.username
         """, (chat_id, user_id, first_name, username))
@@ -359,7 +359,7 @@ def add_group_user_score(chat_id: int, user_id: int, first_name: str, username: 
             WHERE chat_id = ? AND user_id = ?
         """, (chat_id, user_id))
         row = cursor.fetchone()
-        new_score = row["score"] if row else 1
+        new_score = row["score"] if row else 10
         conn.commit()
         return new_score
 

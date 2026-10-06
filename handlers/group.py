@@ -1,11 +1,12 @@
 import time
 from aiogram import Router, F, Bot
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
 
 import database
 from config import ADMIN_IDS, SIMILARITY_THRESHOLD
 from utils.matcher import calculate_similarity
+from keyboards import next_question_inline
 
 router = Router()
 
@@ -31,33 +32,41 @@ async def cmd_start_quiz(message: Message, bot: Bot):
         await message.reply("⛔️ Bu buyruqdan faqat guruh adminlari foydalana oladi!")
         return
 
-    # Guruhda avto-savolni yoqish
+    # Guruh holatini faollashtirish
     database.set_group_auto_status(chat_id, True, title=message.chat.title or "Guruh")
     
-    # Birinchi savol darhol (bir necha soniya ichida) chiqishi uchun last_action_at ni orqaga suramiz
-    with database.get_db() as conn:
-        cursor = conn.cursor()
-        cursor.execute(
-            "UPDATE groups SET last_action_at = ? WHERE chat_id = ?",
-            (time.time() - 175, chat_id)
-        )
-        conn.commit()
-
+    # Guruhda faol savol bormi tekshirish
     group = database.get_group(chat_id)
-    interval_min = max(1, round((group["interval_seconds"] or 180) / 60))
+    if group and group["current_question_id"]:
+        await message.answer("⚠️ Guruhda allaqachon faol savol mavjud! Avval unga javob bering.")
+        return
 
-    text = (
-        "🚀 <b>Zakovat avto-savol rejimi YOQILDI!</b>\n\n"
-        f"⏱ Savollar oralig'i: <b>{interval_min} daqiqa</b>\n"
-        "⏳ Javob berish vaqti: <b>90 soniya</b>\n\n"
-        "📌 <i>Birinchi savol bir necha soniya ichida yuboriladi. Barchaga omad!</i>\n\n"
-        "🛠 <b>Boshqaruv buyruqlari:</b>\n"
-        "• /stop_quiz — O'yinni to'xtatish\n"
-        "• /interval [daqiqa] — Oraliq vaqtini o'zgartirish (masalan: <code>/interval 2</code>)\n"
-        "• /savol — Navbatdan tashqari savol olish\n"
-        "• /reyting — Guruh peshqadamlari ro'yxati"
+    question = database.get_random_question()
+    if not question:
+        await message.answer("Bazada hozircha savollar yo'q.")
+        return
+
+    q_text = (
+        f"🚀 <b>Guruhda Zakovat o'yini boshlandi!</b>\n\n"
+        f"🧠 <b>Zakovat savoli #{question['id']}</b>\n\n"
+        f"❓ {question['question']}\n\n"
+        f"⏳ <i>Javob berish uchun 90 soniya vaqtingiz bor!</i>\n"
+        f"🎯 <i>To'g'ri javob uchun: <b>+10 ball</b></i>"
     )
-    await message.answer(text, parse_mode="HTML")
+
+    image_id = question["image_id"] if "image_id" in question.keys() else None
+    if image_id:
+        await message.answer_photo(photo=image_id, caption=q_text, parse_mode="HTML")
+    else:
+        await message.answer(q_text, parse_mode="HTML")
+
+    database.set_group_current_question(
+        chat_id=chat_id,
+        question_id=question["id"],
+        answer=question["answer"],
+        explanation=question["explanation"] or "",
+        image_id=image_id
+    )
 
 
 @router.message(F.chat.type.in_(["group", "supergroup"]), Command("stop_quiz", "toxtatish"))
@@ -73,38 +82,8 @@ async def cmd_stop_quiz(message: Message, bot: Bot):
     database.clear_group_current_question(chat_id)
 
     await message.answer(
-        "🛑 <b>Zakovat avto-savol rejimi to'xtatildi.</b>\n\n"
-        "Qayta yoqish uchun: /start_quiz",
-        parse_mode="HTML"
-    )
-
-
-@router.message(F.chat.type.in_(["group", "supergroup"]), Command("interval"))
-async def cmd_change_interval(message: Message, bot: Bot):
-    chat_id = message.chat.id
-    user_id = message.from_user.id
-    
-    if not await is_admin_or_group_admin(bot, chat_id, user_id):
-        await message.reply("⛔️ Bu buyruqdan faqat guruh adminlari foydalana oladi!")
-        return
-
-    parts = message.text.strip().split()
-    if len(parts) < 2 or not parts[1].isdigit():
-        await message.reply(
-            "Iltimos, oraliq vaqtini daqiqada kiriting.\n"
-            "Masalan: <code>/interval 3</code> (har 3 daqiqada yangi savol)",
-            parse_mode="HTML"
-        )
-        return
-
-    minutes = int(parts[1])
-    if minutes < 1 or minutes > 60:
-        await message.reply("Interval 1 dan 60 daqiqagacha bo'lishi mumkin.")
-        return
-
-    database.set_group_interval(chat_id, minutes)
-    await message.answer(
-        f"⏱ <b>Savollar oralig'i {minutes} daqiqaga o'zgartirildi!</b>",
+        "🛑 <b>Zakovat o'yini to'xtatildi.</b>\n\n"
+        "Qayta boshlash uchun: /start_quiz",
         parse_mode="HTML"
     )
 
@@ -128,7 +107,8 @@ async def cmd_manual_question(message: Message):
     q_text = (
         f"🧠 <b>Zakovat savoli #{question['id']}</b>\n\n"
         f"❓ {question['question']}\n\n"
-        f"⏳ <i>Javob berish uchun 90 soniya vaqtingiz bor!</i>"
+        f"⏳ <i>Javob berish uchun 90 soniya vaqtingiz bor!</i>\n"
+        f"🎯 <i>To'g'ri javob uchun: <b>+10 ball</b></i>"
     )
 
     image_id = question["image_id"] if "image_id" in question.keys() else None
@@ -136,6 +116,45 @@ async def cmd_manual_question(message: Message):
         await message.answer_photo(photo=image_id, caption=q_text, parse_mode="HTML")
     else:
         await message.answer(q_text, parse_mode="HTML")
+
+    database.set_group_current_question(
+        chat_id=chat_id,
+        question_id=question["id"],
+        answer=question["answer"],
+        explanation=question["explanation"] or "",
+        image_id=image_id
+    )
+
+
+@router.callback_query(F.data == "group_next_q")
+async def callback_group_next_question(callback: CallbackQuery):
+    chat_id = callback.message.chat.id
+    group = database.get_group(chat_id)
+    
+    # Guruhda hozir faol savol bormi tekshirish
+    if group and group["current_question_id"]:
+        await callback.answer("⚠️ Hozirda faol savol mavjud! Avval unga javob bering.", show_alert=True)
+        return
+        
+    question = database.get_random_question()
+    if not question:
+        await callback.answer("Bazada savollar tugadi.", show_alert=True)
+        return
+        
+    await callback.answer("Yangi savol!")
+    
+    q_text = (
+        f"🧠 <b>Zakovat savoli #{question['id']}</b>\n\n"
+        f"❓ {question['question']}\n\n"
+        f"⏳ <i>Javob berish uchun 90 soniya vaqtingiz bor!</i>\n"
+        f"🎯 <i>To'g'ri javob uchun: <b>+10 ball</b></i>"
+    )
+
+    image_id = question["image_id"] if "image_id" in question.keys() else None
+    if image_id:
+        await callback.message.answer_photo(photo=image_id, caption=q_text, parse_mode="HTML")
+    else:
+        await callback.message.answer(q_text, parse_mode="HTML")
 
     database.set_group_current_question(
         chat_id=chat_id,
@@ -200,7 +219,7 @@ async def handle_group_answer(message: Message):
         username = user.username
         mention = f"@{username}" if username else f"<b>{first_name}</b>"
 
-        # Guruhdagi foydalanuvchi hisobiga ball qo'shish
+        # Guruhdagi foydalanuvchi hisobiga +10 ball qo'shish
         new_score = database.add_group_user_score(
             chat_id=chat_id,
             user_id=user.id,
@@ -213,8 +232,6 @@ async def handle_group_answer(message: Message):
         # Faol savolni tozalash (keyingi savolga tayyorlash)
         database.clear_group_current_question(chat_id)
 
-        interval_min = max(1, round((group["interval_seconds"] or 180) / 60))
-
         resp = (
             f"🎉 <b>To'g'ri javob!</b>\n\n"
             f"👏 G'olib: {mention}\n"
@@ -224,7 +241,7 @@ async def handle_group_answer(message: Message):
             resp += f"ℹ️ <i>Izoh: {explanation}</i>\n"
             
         resp += (
-            f"\n🏆 Guruhdagi to'plangan ball: <b>{new_score} ta</b> (+1 ball)\n"
-            f"⏱ Keyingi savol <b>{interval_min} daqiqa</b>dan so'ng yuboriladi..."
+            f"\n🏆 Guruhdagi to'plangan ball: <b>{new_score} ta</b> (<b>+10 ball</b>)\n\n"
+            f"👇 <i>Keyingi savolga tayyor bo'lsangiz, pastdagi tugmani bosing:</i>"
         )
-        await message.reply(resp, parse_mode="HTML")
+        await message.reply(resp, reply_markup=next_question_inline(), parse_mode="HTML")

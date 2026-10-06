@@ -7,6 +7,7 @@ from .keyboards import (
     cancel_keyboard,
     question_delete_inline,
     add_to_group_inline,
+    next_question_inline,
     remove_keyboard
 )
 
@@ -19,5 +20,6 @@ __all__ = [
     "cancel_keyboard",
     "question_delete_inline",
     "add_to_group_inline",
+    "next_question_inline",
     "remove_keyboard"
 ]
