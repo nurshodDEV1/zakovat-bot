@@ -1,0 +1,30 @@
+# Maxfiy ma'lumotlar va tokenlar
+.env
+
+# Ma'lumotlar bazasi
+*.db
+*.sqlite
+*.sqlite3
+
+# Python keshlari
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Virtual muhit
+venv/
+env/
+ENV/
+.venv/
+
+# Muhit va IDE sozlamalari
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Operatsion tizim fayllari
+Thumbs.db
+Desktop.ini
+.DS_Store
