@@ -54,7 +54,7 @@ async def send_question(message: Message, state: FSMContext):
     q_text = (
         f"🧠 <b>Zakovat savoli #{question['id']}</b>\n\n"
         f"❓ {question['question']}\n\n"
-        f"<i>✍️ Javobingizni quyida yozib yuboring (kamida 90% aniqlik talab etiladi):</i>"
+        f"<i>✍️ Javobingizni quyida yozib yuboring:</i>"
     )
 
     await message.answer(q_text, reply_markup=in_game_keyboard(), parse_mode="HTML")
@@ -137,20 +137,16 @@ async def process_user_answer(message: Message, state: FSMContext):
     await state.clear()
 
     if is_correct:
-        # 90% yoki undan yuqori (TRUE)
         response_text = (
-            f"🎉 <b>Ajoyib! To'g'ri javob! (TRUE ✅)</b>\n\n"
-            f"🎯 O'xshashlik: <b>{similarity_pct}%</b> (Talab: {SIMILARITY_THRESHOLD}%)\n"
-            f"💡 To'g'ri javob: <b>{matched_variant}</b>\n"
+            f"🎉 <b>Ajoyib! To'g'ri javob! ✅</b>\n\n"
+            f"💡 Javob: <b>{matched_variant}</b>\n"
         )
         if explanation:
             response_text += f"ℹ️ <i>Izoh: {explanation}</i>\n"
         response_text += "\n👏 Sizga <b>+1 ball</b> berildi!"
     else:
-        # 90% dan kam (FALSE)
         response_text = (
-            f"❌ <b>Afsuski noto'g'ri! (FALSE ❌)</b>\n\n"
-            f"📉 O'xshashlik: <b>{similarity_pct}%</b> (Kamida {SIMILARITY_THRESHOLD}% bo'lishi kerak)\n"
+            f"❌ <b>Afsuski, noto'g'ri javob!</b>\n\n"
             f"💡 To'g'ri javob: <b>{correct_answer}</b>\n"
         )
         if explanation:

@@ -71,7 +71,7 @@ async def process_contact(message: Message, state: FSMContext):
         f"O'yin qoidasi oddiy:\n"
         f"1. <b>'❓ Savol olish'</b> tugmasini bosing.\n"
         f"2. Savolga javobingizni matn ko'rinishida yozib yuboring.\n"
-        f"3. Agar javobingiz <b>90% yoki undan yuqori</b> aniqlikda bo'lsa, sizga ball beriladi!\n\n"
+        f"3. Agar javobingiz to'g'ri bo'lsa, sizga ball beriladi!\n\n"
         f"Tayyor bo'lsangiz, boshlaymizmi?"
     )
     
